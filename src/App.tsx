@@ -14,7 +14,12 @@ import {
   useToast,
   Collapse,
   Flex,
-  Divider,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
 } from '@chakra-ui/react';
 import { 
   AddIcon, 
@@ -24,17 +29,25 @@ import {
   ChevronDownIcon,
   TimeIcon 
 } from '@chakra-ui/icons';
-import type { Todo } from './types/todo';
 
 type TabType = 'today' | 'pending' | 'overdue';
 
-// Extended Todo type with new fields
-interface ExtendedTodo extends Todo {
+interface ExtendedTodo {
+  id: number;
+  title: string;
+  completed: boolean;
+  createdAt: string;
   dueDate?: string;
   priority?: 'low' | 'medium' | 'high';
 }
 
 function App() {
+  // User management
+  const [userName, setUserName] = useState<string | null>(null);
+  const [isNameModalOpen, setIsNameModalOpen] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+  
+  // Todo management
   const [todos, setTodos] = useState<ExtendedTodo[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('today');
   const [showCompleted, setShowCompleted] = useState(true);
@@ -47,19 +60,31 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const toast = useToast();
 
-  // Mock data for demo
+  // Load user name from localStorage
   useEffect(() => {
-    const mockTodos: ExtendedTodo[] = [
-      { id: 1, title: 'Test', completed: true, createdAt: '2025-09-18T10:00:00Z', dueDate: '2025-09-18', priority: 'low' },
-      { id: 2, title: 'ASsaSASsa', completed: true, createdAt: '2025-09-09T10:00:00Z', dueDate: '2025-09-09', priority: 'low' },
-      { id: 3, title: 'Task 1', completed: true, createdAt: '2025-10-10T10:00:00Z', dueDate: '2025-10-10', priority: 'high' },
-      { id: 4, title: 'Buy groceries', completed: false, createdAt: '2025-10-29T10:00:00Z', dueDate: '2025-10-29', priority: 'medium' },
-      { id: 5, title: 'Call dentist', completed: false, createdAt: '2025-10-30T10:00:00Z', dueDate: '2025-10-30', priority: 'low' },
-      { id: 6, title: 'Submit report', completed: false, createdAt: '2025-10-20T10:00:00Z', dueDate: '2025-10-20', priority: 'high' },
-    ];
-    setTodos(mockTodos);
-    setIsLoading(false);
+    const saved = localStorage.getItem('todoUserName');
+    if (saved) {
+      setUserName(saved);
+    } else {
+      setIsNameModalOpen(true);
+    }
   }, []);
+
+  // Load mock data
+  useEffect(() => {
+    if (userName) {
+      const mockTodos: ExtendedTodo[] = [
+        { id: 1, title: 'Test', completed: true, createdAt: '2025-09-18T10:00:00Z', dueDate: '2025-09-18', priority: 'low' },
+        { id: 2, title: 'ASsaSASsa', completed: true, createdAt: '2025-09-09T10:00:00Z', dueDate: '2025-09-09', priority: 'low' },
+        { id: 3, title: 'Task 1', completed: true, createdAt: '2025-10-10T10:00:00Z', dueDate: '2025-10-10', priority: 'high' },
+        { id: 4, title: 'Buy groceries', completed: false, createdAt: '2025-10-29T10:00:00Z', dueDate: '2025-10-29', priority: 'medium' },
+        { id: 5, title: 'Call dentist', completed: false, createdAt: '2025-10-30T10:00:00Z', dueDate: '2025-10-30', priority: 'low' },
+        { id: 6, title: 'Submit report', completed: false, createdAt: '2025-10-20T10:00:00Z', dueDate: '2025-10-20', priority: 'high' },
+      ];
+      setTodos(mockTodos);
+      setIsLoading(false);
+    }
+  }, [userName]);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -88,7 +113,33 @@ function App() {
   const completedTodos = todos.filter(t => t.completed);
   const activeTodos = filterTodos(todos, activeTab);
 
-  const handleAddTask = async () => {
+  const handleSaveName = () => {
+    if (!nameInput.trim()) {
+      toast({
+        title: 'Please enter your name',
+        status: 'warning',
+        duration: 2000,
+      });
+      return;
+    }
+    localStorage.setItem('todoUserName', nameInput);
+    setUserName(nameInput);
+    setIsNameModalOpen(false);
+    toast({
+      title: `Welcome, ${nameInput}!`,
+      status: 'success',
+      duration: 2000,
+    });
+  };
+
+  const handleChangeUser = () => {
+    localStorage.removeItem('todoUserName');
+    setUserName(null);
+    setNameInput('');
+    setIsNameModalOpen(true);
+  };
+
+  const handleAddTask = () => {
     if (!newTaskTitle.trim()) {
       toast({
         title: 'Please enter a task',
@@ -119,11 +170,11 @@ function App() {
     });
   };
 
-  const handleToggle = async (id: number) => {
+  const handleToggle = (id: number) => {
     setTodos(todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = (id: number) => {
     setTodos(todos.filter(t => t.id !== id));
     toast({
       title: 'Task deleted successfully',
@@ -165,6 +216,34 @@ function App() {
 
   return (
     <Box minH="100vh" bg="gray.50">
+      {/* Name Entry Modal */}
+      <Modal 
+        isOpen={isNameModalOpen} 
+        onClose={() => {}}
+        closeOnOverlayClick={false}
+        closeOnEsc={false}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Welcome to Todo App</ModalHeader>
+          <ModalBody>
+            <Text mb={4}>Please enter your name to get started:</Text>
+            <Input
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              placeholder="Your name..."
+              size="lg"
+              onKeyPress={(e) => e.key === 'Enter' && handleSaveName()}
+            />
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="green" onClick={handleSaveName}>
+              Start
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
       {/* Hero Header */}
       <Box
         bgGradient="linear(to-r, green.900, green.800, green.900)"
@@ -184,6 +263,20 @@ function App() {
           <Heading as="h1" size="3xl" textAlign="center">
             Todo App
           </Heading>
+          {userName && (
+            <VStack mt={4} spacing={1}>
+              <Text fontSize="lg">Hello, {userName}! 👋</Text>
+              <Button
+                size="sm"
+                variant="link"
+                color="whiteAlpha.800"
+                onClick={handleChangeUser}
+                _hover={{ color: 'white' }}
+              >
+                Change user
+              </Button>
+            </VStack>
+          )}
         </Container>
       </Box>
 
@@ -260,6 +353,7 @@ function App() {
                 placeholder="Task title..."
                 size="lg"
                 autoFocus
+                onKeyPress={(e) => e.key === 'Enter' && handleAddTask()}
               />
               <HStack>
                 <Input
