@@ -14,12 +14,6 @@ import {
   useToast,
   Collapse,
   Flex,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
 } from '@chakra-ui/react';
 import { 
   AddIcon, 
@@ -44,7 +38,6 @@ interface ExtendedTodo {
 function App() {
   // User management
   const [userName, setUserName] = useState<string | null>(null);
-  const [isNameModalOpen, setIsNameModalOpen] = useState(false);
   const [nameInput, setNameInput] = useState('');
   
   // Todo management
@@ -65,8 +58,6 @@ function App() {
     const saved = localStorage.getItem('todoUserName');
     if (saved) {
       setUserName(saved);
-    } else {
-      setIsNameModalOpen(true);
     }
   }, []);
 
@@ -124,7 +115,6 @@ function App() {
     }
     localStorage.setItem('todoUserName', nameInput);
     setUserName(nameInput);
-    setIsNameModalOpen(false);
     toast({
       title: `Welcome, ${nameInput}!`,
       status: 'success',
@@ -136,7 +126,6 @@ function App() {
     localStorage.removeItem('todoUserName');
     setUserName(null);
     setNameInput('');
-    setIsNameModalOpen(true);
   };
 
   const handleAddTask = () => {
@@ -214,35 +203,42 @@ function App() {
     }
   };
 
-  return (
-    <Box minH="100vh" bg="gray.50">
-      {/* Name Entry Modal */}
-      <Modal 
-        isOpen={isNameModalOpen} 
-        onClose={() => {}}
-        closeOnOverlayClick={false}
-        closeOnEsc={false}
-      >
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Welcome to Todo App</ModalHeader>
-          <ModalBody>
-            <Text mb={4}>Please enter your name to get started:</Text>
+  // If user hasn't entered name yet, show the NameEntry modal only
+  if (!userName) {
+    return (
+      <Box minH="100vh" bg="gray.50" display="flex" alignItems="center" justifyContent="center">
+        <Box bg="white" p={8} borderRadius="lg" shadow="xl" maxW="md" w="full">
+          <Heading as="h2" size="xl" mb={2} textAlign="center" color="green.700">
+            Welcome to Todo App
+          </Heading>
+          <Text mb={6} textAlign="center" color="gray.600">
+            Please enter your name to get started:
+          </Text>
+          <VStack spacing={4}>
             <Input
               value={nameInput}
               onChange={(e) => setNameInput(e.target.value)}
               placeholder="Your name..."
               size="lg"
               onKeyPress={(e) => e.key === 'Enter' && handleSaveName()}
+              autoFocus
             />
-          </ModalBody>
-          <ModalFooter>
-            <Button colorScheme="green" onClick={handleSaveName}>
+            <Button 
+              colorScheme="green" 
+              w="full" 
+              size="lg"
+              onClick={handleSaveName}
+            >
               Start
             </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+          </VStack>
+        </Box>
+      </Box>
+    );
+  }
+
+  return (
+    <Box minH="100vh" bg="gray.50">
 
       {/* Hero Header */}
       <Box
