@@ -9,13 +9,20 @@ import {
 } from '@chakra-ui/react';
 import { TodoInput } from './components/TodoInput';
 import { TodoList } from './components/TodoList';
+import { NameEntry } from './components/NameEntry';
 import { todoApi } from './api/todoApi';
 import type { Todo } from './types/todo';
 
 function App() {
+  const [userName, setUserName] = useState<string | null>(null);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const toast = useToast();
+
+  useEffect(() => {
+    const saved = localStorage.getItem('todoUserName');
+    if (saved) setUserName(saved);
+  }, []);
 
   const fetchTodos = async () => {
     try {
@@ -34,7 +41,8 @@ function App() {
   };
 
   useEffect(() => {
-    fetchTodos();
+    // Only fetch todos if a user is present (future backend may scope by user)
+    if (userName) fetchTodos();
   }, []);
 
   const handleAddTodo = async (title: string) => {
@@ -88,6 +96,38 @@ function App() {
     }
   };
 
+  const handleSaveName = async (name: string) => {
+    // Persist locally for now; backend integration can be added here.
+    localStorage.setItem('todoUserName', name);
+    setUserName(name);
+
+    try {
+      // Attempt to create user on backend if endpoint exists. Non-blocking.
+      // Keep this call optional and swallow errors so UI remains usable when backend is absent.
+      if (todoApi.createUser) {
+        await todoApi.createUser({ name });
+      }
+    } catch (err) {
+      // ignore: backend may not implement this yet
+      console.debug('createUser API call failed (expected if backend not implemented)', err);
+    }
+  };
+
+  const handleChangeUser = () => {
+    localStorage.removeItem('todoUserName');
+    setUserName(null);
+    // Optionally clear todos or refetch when user changes
+  };
+
+  // If user hasn't entered name yet, show the NameEntry page
+  if (!userName) {
+    return (
+      <Container maxW="container.sm" py={10}>
+        <NameEntry onSaveName={handleSaveName} />
+      </Container>
+    );
+  }
+
   return (
     <Container maxW="container.sm" py={10}>
       <VStack spacing={8}>
@@ -95,13 +135,15 @@ function App() {
           <Heading size="xl" mb={2}>
             Todo App
           </Heading>
-          <Text color="gray.500">
-            Manage your tasks efficiently
+          <Text color="gray.500">Manage your tasks efficiently</Text>
+          <Text mt={3} fontWeight="semibold">Hello, {userName}!</Text>
+          <Text as="button" onClick={handleChangeUser} color="blue.500" mt={2}>
+            Change user
           </Text>
         </Box>
-        
+
         <TodoInput onAddTodo={handleAddTodo} />
-        
+
         <TodoList
           todos={todos}
           isLoading={isLoading}

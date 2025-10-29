@@ -21,5 +21,10 @@ export const todoApi = {
 
     deleteTodo: async (id: number): Promise<void> => {
         await axios.delete(`${API_BASE_URL}/todos/${id}`);
+    },
+    // Optional: create a user on the backend. Backend may not be implemented yet.
+    createUser: async (user: { name: string }): Promise<any> => {
+        const response = await axios.post(`${API_BASE_URL}/users`, user);
+        return response.data;
     }
 };
