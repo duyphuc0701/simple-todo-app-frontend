@@ -3,6 +3,8 @@ export interface Todo {
     title: string;
     completed: boolean;
     createdAt: string;
+    dueDate?: string;           // ✅ ADD
+    priority?: 'low' | 'medium' | 'high';  // ✅ ADD
 }
 
 export interface CreateTodoRequest {
