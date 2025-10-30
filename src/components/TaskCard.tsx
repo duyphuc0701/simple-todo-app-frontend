@@ -20,6 +20,7 @@ interface TaskCardProps {
   onSaveEdit: (id: number) => void;
   onDelete?: (id: number) => void;
   showDelete?: boolean;
+  mutedIcons?: boolean;
   formatDate: (s: string) => string;
   getPriorityColor: (p?: string) => string;
 }
@@ -34,6 +35,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onSaveEdit,
   onDelete,
   showDelete,
+  mutedIcons = false,
   formatDate,
   getPriorityColor,
 }) => {
@@ -85,8 +87,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           onClick={() => onEdit(todo.id, todo.title)}
           aria-label="Edit task"
           variant="ghost"
-          colorScheme="gray"
           size="sm"
+          color={mutedIcons ? 'gray.300' : undefined}
+          _hover={mutedIcons ? { color: 'gray.700' } : undefined}
         />
 
         {showDelete && onDelete && (
@@ -95,8 +98,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             onClick={() => onDelete(todo.id)}
             aria-label="Delete task"
             variant="ghost"
-            colorScheme="red"
             size="sm"
+            color={mutedIcons ? 'gray.300' : undefined}
+            _hover={mutedIcons ? { color: 'red.500' } : undefined}
           />
         )}
 

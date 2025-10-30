@@ -97,6 +97,7 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
                     onSaveEdit={onSaveEdit}
                     onDelete={onDelete}
                     showDelete={true}
+                    mutedIcons={true}
                     formatDate={formatDate}
                     getPriorityColor={getPriorityColor}
                   />
