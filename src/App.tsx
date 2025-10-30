@@ -50,7 +50,6 @@ function App() {
   const [newTaskPriority, setNewTaskPriority] = useState<'low' | 'medium' | 'high'>('medium');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
   const toast = useToast();
 
   // Load user name from localStorage
@@ -73,7 +72,6 @@ function App() {
         { id: 6, title: 'Submit report', completed: false, createdAt: '2025-10-20T10:00:00Z', dueDate: '2025-10-20', priority: 'high' },
       ];
       setTodos(mockTodos);
-      setIsLoading(false);
     }
   }, [userName]);
 
