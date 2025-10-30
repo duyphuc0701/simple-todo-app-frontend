@@ -90,7 +90,30 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         {todo.dueDate && (
           <HStack color="gray.500" fontSize="sm">
             <TimeIcon />
-            <Text>{formatDate(todo.dueDate)}</Text>
+            <Box>
+              {(() => {
+                try {
+                  // Use only the user-provided dueDate. If it contains a time component,
+                  // show both date and time. If it's date-only, show only the date.
+                  const due = todo.dueDate as string;
+                  const hasTime = /T|:\d{2}/.test(due);
+                  const dt = new Date(due);
+                  if (isNaN(dt.getTime())) return null;
+                  return (
+                    <>
+                      <Text>{formatDate(due)}</Text>
+                      {hasTime && (
+                        <Text fontSize="xs" color="gray.400">
+                          {dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </Text>
+                      )}
+                    </>
+                  );
+                } catch (e) {
+                  return null;
+                }
+              })()}
+            </Box>
           </HStack>
         )}
 

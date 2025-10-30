@@ -8,6 +8,7 @@ import HeroHeader from './components/HeroHeader';
 import TabNavigation from './components/TabNavigation';
 import AddTaskForm from './components/AddTaskForm';
 import TaskListView from './components/TaskListView';
+import { todoApi } from './api/todoApi';
 
 type TabType = 'today' | 'pending' | 'overdue';
 
@@ -31,18 +32,20 @@ function App() {
     if (saved) setUserName(saved);
   }, []);
 
+  // When a userName is present, fetch that user's todos from the backend using X-User-Name
   useEffect(() => {
-    if (userName) {
-      const mockTodos: Todo[] = [
-        { id: 1, title: 'Test', completed: true, createdAt: '2025-09-18T10:00:00Z', dueDate: '2025-09-18', priority: 'low' },
-        { id: 2, title: 'ASsaSASsa', completed: true, createdAt: '2025-09-09T10:00:00Z', dueDate: '2025-09-09', priority: 'low' },
-        { id: 3, title: 'Task 1', completed: true, createdAt: '2025-10-10T10:00:00Z', dueDate: '2025-10-10', priority: 'high' },
-        { id: 4, title: 'Buy groceries', completed: false, createdAt: '2025-10-29T10:00:00Z', dueDate: '2025-10-29', priority: 'medium' },
-        { id: 5, title: 'Call dentist', completed: false, createdAt: '2025-10-30T10:00:00Z', dueDate: '2025-10-30', priority: 'low' },
-        { id: 6, title: 'Submit report', completed: false, createdAt: '2025-10-20T10:00:00Z', dueDate: '2025-10-20', priority: 'high' },
-      ];
-      setTodos(mockTodos);
-    }
+    let mounted = true;
+    const fetch = async () => {
+      if (!userName) return;
+      try {
+        const data = await todoApi.getAllTodos();
+        if (mounted) setTodos(data);
+      } catch (e) {
+        if (mounted) setTodos([]);
+      }
+    };
+    fetch();
+    return () => { mounted = false; };
   }, [userName]);
 
   const today = new Date();
@@ -71,41 +74,74 @@ function App() {
   const activeTodos = filterTodos(todos, activeTab);
 
   const handleSaveName = async (name: string) => {
-    localStorage.setItem('todoUserName', name);
-    setUserName(name);
-    toast({ title: `Welcome, ${name}!`, status: 'success', duration: 2000 });
+    try {
+      await todoApi.createUser({ name });
+      const data = await todoApi.getAllTodos();
+      setTodos(data || []);
+      setUserName(name);
+      toast({ title: `Welcome, ${name}!`, status: 'success', duration: 2000 });
+    } catch (err) {
+      toast({ title: 'Unable to create user or fetch todos', status: 'error', duration: 2500 });
+    }
   };
 
   const handleChangeUser = () => {
-    localStorage.removeItem('todoUserName');
+    todoApi.setCurrentUserName(null);
     setUserName(null);
+    setTodos([]);
   };
 
   const handleAddTask = (data: { title: string; dueDate?: string; priority?: 'low'|'medium'|'high' }) => {
-    if (!data.title.trim()) {
-      toast({ title: 'Please enter a task', status: 'warning', duration: 2000 });
-      return;
-    }
-    const newTodo: Todo = {
-      id: Date.now(),
-      title: data.title,
-      completed: false,
-      createdAt: new Date().toISOString(),
-      dueDate: data.dueDate,
-      priority: data.priority,
-    };
-    setTodos(prev => [...prev, newTodo]);
-    setIsAddingTask(false);
-    toast({ title: 'Task added successfully', status: 'success', duration: 2000 });
+    (async () => {
+      if (!data.title.trim()) {
+        toast({ title: 'Please enter a task', status: 'warning', duration: 2000 });
+        return;
+      }
+      try {
+        const created = await todoApi.createTodo({ title: data.title, dueDate: data.dueDate, priority: data.priority });
+        setTodos(prev => [...prev, created]);
+        setIsAddingTask(false);
+        toast({ title: 'Task added successfully', status: 'success', duration: 2000 });
+      } catch (err) {
+        // fallback to local add
+        const newTodo: Todo = {
+          id: Date.now(),
+          title: data.title,
+          completed: false,
+          createdAt: new Date().toISOString(),
+          dueDate: data.dueDate,
+          priority: data.priority,
+        };
+        setTodos(prev => [...prev, newTodo]);
+        setIsAddingTask(false);
+        toast({ title: 'Task added locally (offline)', status: 'warning', duration: 2500 });
+      }
+    })();
   };
 
   const handleToggle = (id: number) => {
-    setTodos(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+    (async () => {
+      try {
+        const updated = await todoApi.toggleTodo(id);
+        setTodos(prev => prev.map(t => t.id === id ? updated : t));
+      } catch (err) {
+        setTodos(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+        toast({ title: 'Toggled locally (offline)', status: 'warning', duration: 2000 });
+      }
+    })();
   };
 
   const handleDelete = (id: number) => {
-    setTodos(prev => prev.filter(t => t.id !== id));
-    toast({ title: 'Task deleted successfully', status: 'success', duration: 2000 });
+    (async () => {
+      try {
+        await todoApi.deleteTodo(id);
+        setTodos(prev => prev.filter(t => t.id !== id));
+        toast({ title: 'Task deleted successfully', status: 'success', duration: 2000 });
+      } catch (err) {
+        setTodos(prev => prev.filter(t => t.id !== id));
+        toast({ title: 'Deleted locally (offline)', status: 'warning', duration: 2000 });
+      }
+    })();
   };
 
   const handleEdit = (id: number, title: string) => {
@@ -114,11 +150,21 @@ function App() {
   };
 
   const handleSaveEdit = (id: number) => {
-    if (!editTitle.trim()) return;
-    setTodos(prev => prev.map(t => t.id === id ? { ...t, title: editTitle } : t));
-    setEditingId(null);
-    setEditTitle('');
-    toast({ title: 'Task updated successfully', status: 'success', duration: 2000 });
+    (async () => {
+      if (!editTitle.trim()) return;
+      try {
+        const updated = await todoApi.updateTodo(id, { title: editTitle });
+        setTodos(prev => prev.map(t => t.id === id ? updated : t));
+        setEditingId(null);
+        setEditTitle('');
+        toast({ title: 'Task updated successfully', status: 'success', duration: 2000 });
+      } catch (err) {
+        setTodos(prev => prev.map(t => t.id === id ? { ...t, title: editTitle } : t));
+        setEditingId(null);
+        setEditTitle('');
+        toast({ title: 'Updated locally (offline)', status: 'warning', duration: 2000 });
+      }
+    })();
   };
 
   const formatDate = (dateString: string) => {
