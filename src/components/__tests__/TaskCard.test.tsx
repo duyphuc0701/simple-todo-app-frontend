@@ -53,4 +53,42 @@ describe('TaskCard', () => {
     await user.click(deleteBtn);
     expect(mockDelete).toHaveBeenCalledWith(123);
   });
+
+  it('shows time when dueDate includes a time component', async () => {
+    const mockToggle = vi.fn();
+    const mockEdit = vi.fn();
+    const mockSaveEdit = vi.fn();
+    const mockDelete = vi.fn();
+
+    const todoWithTime: Todo = {
+      id: 456,
+      title: 'Timed Task',
+      completed: false,
+      createdAt: new Date().toISOString(),
+      dueDate: '2025-12-01T14:30:00Z',
+      priority: 'low',
+    };
+
+    render(
+      <ChakraProvider>
+        <TaskCard
+          todo={todoWithTime}
+          editingId={null}
+          editTitle={''}
+          setEditTitle={() => {}}
+          onToggle={mockToggle}
+          onEdit={mockEdit}
+          onSaveEdit={mockSaveEdit}
+          onDelete={mockDelete}
+          showDelete={true}
+          formatDate={(s) => s}
+          getPriorityColor={() => 'gray.300'}
+        />
+      </ChakraProvider>
+    );
+
+    // Expect at least one time-like string (HH:MM) to appear
+    const timeMatches = screen.getAllByText(/\d{1,2}:\d{2}/);
+    expect(timeMatches.length).toBeGreaterThanOrEqual(1);
+  });
 });
