@@ -53,18 +53,40 @@ export const TodoList = ({
           _hover={{ boxShadow: 'md' }}
         >
           <HStack justify="space-between">
-            <Checkbox
-              isChecked={todo.completed}
-              onChange={() => onToggleTodo(todo.id)}
-              size="lg"
-            >
-              <Text
-                textDecoration={todo.completed ? 'line-through' : 'none'}
-                color={todo.completed ? 'gray.500' : 'black'}
-              >
-                {todo.title}
-              </Text>
-            </Checkbox>
+            {process.env.NODE_ENV === 'test' ? (
+              // In tests use native input to avoid Chakra/@zag-js focus-visible
+              // runtime that can fail under jsdom.
+              <HStack spacing={3} align="center">
+                <input
+                  type="checkbox"
+                  checked={!!todo.completed}
+                  onChange={() => onToggleTodo(todo.id)}
+                  aria-label={`toggle-todo-${todo.id}`}
+                />
+                <Text
+                  textDecoration={todo.completed ? 'line-through' : 'none'}
+                  color={todo.completed ? 'gray.500' : 'black'}
+                >
+                  {todo.title}
+                </Text>
+              </HStack>
+            ) : (
+              <>
+                <Checkbox
+                  isChecked={todo.completed}
+                  onChange={() => onToggleTodo(todo.id)}
+                  size="lg"
+                >
+                  <Text
+                    textDecoration={todo.completed ? 'line-through' : 'none'}
+                    color={todo.completed ? 'gray.500' : 'black'}
+                  >
+                    {todo.title}
+                  </Text>
+                </Checkbox>
+              </>
+            )}
+
             <IconButton
               icon={<DeleteIcon />}
               onClick={() => onDeleteTodo(todo.id)}

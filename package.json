@@ -41,4 +41,8 @@
     "vite": "^7.1.7",
     "vitest": "^2.1.5"
   }
+  ,
+  "vitest": {
+    "setupFiles": ["src/vitest.setup.ts"]
+  }
 }
