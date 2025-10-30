@@ -20,6 +20,11 @@ export const todoApi = {
     return response.data;
   },
 
+  updateTodo: async (id: number, updates: Partial<Todo>): Promise<Todo> => {
+      const response = await axios.put(`${API_BASE_URL}/todos/${id}`, updates);
+      return response.data;
+  },
+
   deleteTodo: async (id: number): Promise<void> => {
     await axios.delete(`${API_BASE_URL}/todos/${id}`);
   },
