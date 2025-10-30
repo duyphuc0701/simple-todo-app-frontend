@@ -15,13 +15,30 @@ interface AddTaskFormProps {
 export const AddTaskForm: React.FC<AddTaskFormProps> = ({ onAdd, onCancel }) => {
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
 
   const submit = () => {
     if (!title.trim()) return;
-    onAdd({ title: title.trim(), dueDate: date || undefined, priority });
+    let due: string | undefined = undefined;
+    if (date) {
+      if (time) {
+        // combine date + time into an ISO instant in UTC
+        try {
+          const dt = new Date(`${date}T${time}`); // treated as local time
+          due = dt.toISOString();
+        } catch (e) {
+          due = `${date}`;
+        }
+      } else {
+        // send date-only string (YYYY-MM-DD)
+        due = date;
+      }
+    }
+    onAdd({ title: title.trim(), dueDate: due, priority });
     setTitle('');
     setDate('');
+    setTime('');
     setPriority('medium');
   };
 
@@ -44,6 +61,12 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({ onAdd, onCancel }) => 
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
+            size="lg"
+          />
+          <Input
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
             size="lg"
           />
           <Select
