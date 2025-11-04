@@ -9,4 +9,6 @@ export interface Todo {
 
 export interface CreateTodoRequest {
     title: string;
+    dueDate?: string;
+    priority?: 'low' | 'medium' | 'high';
 }

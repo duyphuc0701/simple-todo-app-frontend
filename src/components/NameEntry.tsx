@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Heading, Input, Button, VStack, Text, HStack, useToast } from '@chakra-ui/react';
+import { Box, Heading, Input, Button, VStack, Text, useToast } from '@chakra-ui/react';
 
 interface NameEntryProps {
   onSaveName: (name: string) => Promise<void> | void;
@@ -28,30 +28,36 @@ export const NameEntry = ({ onSaveName }: NameEntryProps) => {
   };
 
   return (
-    <Box maxW="md" mx="auto" mt={12} p={6} bg="white" borderRadius="md" boxShadow="sm">
-      <VStack spacing={4} align="stretch">
-        <Heading size="md">Welcome</Heading>
-        <Text color="gray.600">Enter your name to continue to your Todo list.</Text>
+    <Box minH="100vh" bg="gray.50" display="flex" alignItems="center" justifyContent="center">
+      <Box bg="white" p={8} borderRadius="lg" shadow="xl" maxW="md" w="full">
+        <Heading as="h2" size="xl" mb={2} textAlign="center" color="green.700">
+          Welcome to Todo App
+        </Heading>
+        <Text mb={6} textAlign="center" color="gray.600">
+          Please enter your name to get started:
+        </Text>
 
-        <form onSubmit={handleSubmit}>
-          <HStack>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-              size="md"
-              isDisabled={isSubmitting}
-            />
-            <Button
-              type="submit"
-              colorScheme="blue"
-              isLoading={isSubmitting}
-            >
-              Continue
-            </Button>
-          </HStack>
-        </form>
-      </VStack>
+        <VStack spacing={4}>
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your name..."
+            size="lg"
+            onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
+            autoFocus
+            isDisabled={isSubmitting}
+          />
+          <Button
+            colorScheme="green"
+            w="full"
+            size="lg"
+            onClick={() => handleSubmit()}
+            isLoading={isSubmitting}
+          >
+            Start
+          </Button>
+        </VStack>
+      </Box>
     </Box>
   );
 };

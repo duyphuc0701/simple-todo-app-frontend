@@ -1,0 +1,148 @@
+import React from 'react';
+import {
+  Box,
+  HStack,
+  Checkbox,
+  Text,
+  IconButton,
+  Input,
+} from '@chakra-ui/react';
+import { EditIcon, TimeIcon, DeleteIcon } from '@chakra-ui/icons';
+import type { Todo } from '../types/todo';
+
+interface TaskCardProps {
+  todo: Todo;
+  editingId: number | null;
+  editTitle: string;
+  setEditTitle: (s: string) => void;
+  onToggle: (id: number) => void;
+  onEdit: (id: number, title: string) => void;
+  onSaveEdit: (id: number) => void;
+  onDelete?: (id: number) => void;
+  showDelete?: boolean;
+  mutedIcons?: boolean;
+  formatDate: (s: string) => string;
+  getPriorityColor: (p?: string) => string;
+}
+
+export const TaskCard: React.FC<TaskCardProps> = ({
+  todo,
+  editingId,
+  editTitle,
+  setEditTitle,
+  onToggle,
+  onEdit,
+  onSaveEdit,
+  onDelete,
+  showDelete,
+  mutedIcons = false,
+  formatDate,
+  getPriorityColor,
+}) => {
+  return (
+    <Box
+      p={4}
+      borderWidth={1}
+      borderColor="gray.200"
+      borderRadius="lg"
+      _hover={{ shadow: 'md' }}
+      transition="all 0.2s"
+    >
+      <HStack spacing={4}>
+        {process.env.NODE_ENV === 'test' ? (
+          // Use a plain checkbox in tests to avoid Chakra/@zag-js focus-visible runtime
+          // behavior which can clash with jsdom. This keeps tests stable while
+          // preserving Chakra Checkbox in non-test environments.
+          <input
+            type="checkbox"
+            checked={!!todo.completed}
+            onChange={() => onToggle(todo.id)}
+            aria-label={`toggle-todo-${todo.id}`}
+          />
+        ) : (
+          <Checkbox
+            isChecked={todo.completed}
+            onChange={() => onToggle(todo.id)}
+            size="lg"
+            colorScheme="green"
+          />
+        )}
+
+        {editingId === todo.id ? (
+          <Input
+            value={editTitle}
+            onChange={(e) => setEditTitle(e.target.value)}
+            onBlur={() => onSaveEdit(todo.id)}
+            onKeyPress={(e) => e.key === 'Enter' && onSaveEdit(todo.id)}
+            size="md"
+            autoFocus
+          />
+        ) : (
+          <Text
+            flex={1}
+            color={todo.completed ? 'gray.400' : 'gray.900'}
+            textDecoration={todo.completed ? 'line-through' : 'none'}
+          >
+            {todo.title}
+          </Text>
+        )}
+
+        {todo.dueDate && (
+          <HStack color="gray.500" fontSize="sm">
+            <TimeIcon />
+            <Box>
+              {(() => {
+                try {
+                  // Use only the user-provided dueDate. If it contains a time component,
+                  // show both date and time. If it's date-only, show only the date.
+                  const due = todo.dueDate as string;
+                  const hasTime = /T|:\d{2}/.test(due);
+                  const dt = new Date(due);
+                  if (isNaN(dt.getTime())) return null;
+                  return (
+                    <>
+                      <Text>{formatDate(due)}</Text>
+                      {hasTime && (
+                        <Text fontSize="xs" color="gray.400">
+                          {dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </Text>
+                      )}
+                    </>
+                  );
+                } catch (e) {
+                  return null;
+                }
+              })()}
+            </Box>
+          </HStack>
+        )}
+
+        <IconButton
+          icon={<EditIcon />}
+          onClick={() => onEdit(todo.id, todo.title)}
+          aria-label="Edit task"
+          variant="ghost"
+          size="sm"
+          color={mutedIcons ? 'gray.300' : undefined}
+          _hover={mutedIcons ? { color: 'gray.700' } : undefined}
+        />
+
+        {showDelete && onDelete && (
+          <IconButton
+            icon={<DeleteIcon />}
+            onClick={() => onDelete(todo.id)}
+            aria-label="Delete task"
+            variant="ghost"
+            size="sm"
+            color={mutedIcons ? 'gray.300' : undefined}
+            _hover={mutedIcons ? { color: 'red.500' } : undefined}
+          />
+        )}
+
+        <Box w={3} h={8} borderRadius="md" bg={getPriorityColor(todo.priority)} />
+      </HStack>
+    </Box>
+  );
+};
+
+export default TaskCard;

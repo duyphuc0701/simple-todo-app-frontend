@@ -1,91 +1,62 @@
 import { useState, useEffect } from 'react';
-import {
-  Box,
-  Container,
-  VStack,
-  HStack,
-  Heading,
-  Text,
-  Button,
-  Input,
-  Select,
-  Checkbox,
-  IconButton,
-  useToast,
-  Collapse,
-  Flex,
-} from '@chakra-ui/react';
-import { 
-  AddIcon, 
-  EditIcon, 
-  DeleteIcon, 
-  ChevronUpIcon, 
-  ChevronDownIcon,
-  TimeIcon 
-} from '@chakra-ui/icons';
+import { Box, Container, Heading, Flex, Button, useToast } from '@chakra-ui/react';
+import { AddIcon } from '@chakra-ui/icons';
+import type { Todo } from './types/todo';
+
+import NameEntry from './components/NameEntry';
+import HeroHeader from './components/HeroHeader';
+import TabNavigation from './components/TabNavigation';
+import AddTaskForm from './components/AddTaskForm';
+import TaskListView from './components/TaskListView';
+import { todoApi } from './api/todoApi';
 
 type TabType = 'today' | 'pending' | 'overdue';
 
-interface ExtendedTodo {
-  id: number;
-  title: string;
-  completed: boolean;
-  createdAt: string;
-  dueDate?: string;
-  priority?: 'low' | 'medium' | 'high';
-}
-
 function App() {
-  // User management
   const [userName, setUserName] = useState<string | null>(null);
-  const [nameInput, setNameInput] = useState('');
-  
-  // Todo management
-  const [todos, setTodos] = useState<ExtendedTodo[]>([]);
+
+  // todos
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('today');
   const [showCompleted, setShowCompleted] = useState(true);
   const [isAddingTask, setIsAddingTask] = useState(false);
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskDate, setNewTaskDate] = useState('');
-  const [newTaskPriority, setNewTaskPriority] = useState<'low' | 'medium' | 'high'>('medium');
+
+  // editing
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState('');
+
   const toast = useToast();
 
-  // Load user name from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('todoUserName');
-    if (saved) {
-      setUserName(saved);
-    }
+    if (saved) setUserName(saved);
   }, []);
 
-  // Load mock data
+  // When a userName is present, fetch that user's todos from the backend using X-User-Name
   useEffect(() => {
-    if (userName) {
-      const mockTodos: ExtendedTodo[] = [
-        { id: 1, title: 'Test', completed: true, createdAt: '2025-09-18T10:00:00Z', dueDate: '2025-09-18', priority: 'low' },
-        { id: 2, title: 'ASsaSASsa', completed: true, createdAt: '2025-09-09T10:00:00Z', dueDate: '2025-09-09', priority: 'low' },
-        { id: 3, title: 'Task 1', completed: true, createdAt: '2025-10-10T10:00:00Z', dueDate: '2025-10-10', priority: 'high' },
-        { id: 4, title: 'Buy groceries', completed: false, createdAt: '2025-10-29T10:00:00Z', dueDate: '2025-10-29', priority: 'medium' },
-        { id: 5, title: 'Call dentist', completed: false, createdAt: '2025-10-30T10:00:00Z', dueDate: '2025-10-30', priority: 'low' },
-        { id: 6, title: 'Submit report', completed: false, createdAt: '2025-10-20T10:00:00Z', dueDate: '2025-10-20', priority: 'high' },
-      ];
-      setTodos(mockTodos);
-    }
+    let mounted = true;
+    const fetch = async () => {
+      if (!userName) return;
+      try {
+        const data = await todoApi.getAllTodos();
+        if (mounted) setTodos(data);
+      } catch (e) {
+        if (mounted) setTodos([]);
+      }
+    };
+    fetch();
+    return () => { mounted = false; };
   }, [userName]);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const filterTodos = (todos: ExtendedTodo[], type: TabType) => {
-    return todos.filter(todo => {
+  const filterTodos = (items: Todo[], type: TabType) => {
+    return items.filter(todo => {
       if (todo.completed) return false;
       if (!todo.dueDate) return type === 'pending';
-      
       const dueDate = new Date(todo.dueDate);
       dueDate.setHours(0, 0, 0, 0);
-      
       switch (type) {
         case 'today':
           return dueDate.getTime() === today.getTime();
@@ -102,72 +73,75 @@ function App() {
   const completedTodos = todos.filter(t => t.completed);
   const activeTodos = filterTodos(todos, activeTab);
 
-  const handleSaveName = () => {
-    if (!nameInput.trim()) {
-      toast({
-        title: 'Please enter your name',
-        status: 'warning',
-        duration: 2000,
-      });
-      return;
+  const handleSaveName = async (name: string) => {
+    try {
+      await todoApi.createUser({ name });
+      const data = await todoApi.getAllTodos();
+      setTodos(data || []);
+      setUserName(name);
+      toast({ title: `Welcome, ${name}!`, status: 'success', duration: 2000 });
+    } catch (err) {
+      toast({ title: 'Unable to create user or fetch todos', status: 'error', duration: 2500 });
     }
-    localStorage.setItem('todoUserName', nameInput);
-    setUserName(nameInput);
-    toast({
-      title: `Welcome, ${nameInput}!`,
-      status: 'success',
-      duration: 2000,
-    });
   };
 
   const handleChangeUser = () => {
-    localStorage.removeItem('todoUserName');
+    todoApi.setCurrentUserName(null);
     setUserName(null);
-    setNameInput('');
+    setTodos([]);
   };
 
-  const handleAddTask = () => {
-    if (!newTaskTitle.trim()) {
-      toast({
-        title: 'Please enter a task',
-        status: 'warning',
-        duration: 2000,
-      });
-      return;
-    }
-    
-    const newTodo: ExtendedTodo = {
-      id: Date.now(),
-      title: newTaskTitle,
-      completed: false,
-      createdAt: new Date().toISOString(),
-      dueDate: newTaskDate || undefined,
-      priority: newTaskPriority
-    };
-    
-    setTodos([...todos, newTodo]);
-    setNewTaskTitle('');
-    setNewTaskDate('');
-    setIsAddingTask(false);
-    
-    toast({
-      title: 'Task added successfully',
-      status: 'success',
-      duration: 2000,
-    });
+  const handleAddTask = (data: { title: string; dueDate?: string; priority?: 'low'|'medium'|'high' }) => {
+    (async () => {
+      if (!data.title.trim()) {
+        toast({ title: 'Please enter a task', status: 'warning', duration: 2000 });
+        return;
+      }
+      try {
+        const created = await todoApi.createTodo({ title: data.title, dueDate: data.dueDate, priority: data.priority });
+        setTodos(prev => [...prev, created]);
+        setIsAddingTask(false);
+        toast({ title: 'Task added successfully', status: 'success', duration: 2000 });
+      } catch (err) {
+        // fallback to local add
+        const newTodo: Todo = {
+          id: Date.now(),
+          title: data.title,
+          completed: false,
+          createdAt: new Date().toISOString(),
+          dueDate: data.dueDate,
+          priority: data.priority,
+        };
+        setTodos(prev => [...prev, newTodo]);
+        setIsAddingTask(false);
+        toast({ title: 'Task added locally (offline)', status: 'warning', duration: 2500 });
+      }
+    })();
   };
 
   const handleToggle = (id: number) => {
-    setTodos(todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+    (async () => {
+      try {
+        const updated = await todoApi.toggleTodo(id);
+        setTodos(prev => prev.map(t => t.id === id ? updated : t));
+      } catch (err) {
+        setTodos(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+        toast({ title: 'Toggled locally (offline)', status: 'warning', duration: 2000 });
+      }
+    })();
   };
 
   const handleDelete = (id: number) => {
-    setTodos(todos.filter(t => t.id !== id));
-    toast({
-      title: 'Task deleted successfully',
-      status: 'success',
-      duration: 2000,
-    });
+    (async () => {
+      try {
+        await todoApi.deleteTodo(id);
+        setTodos(prev => prev.filter(t => t.id !== id));
+        toast({ title: 'Task deleted successfully', status: 'success', duration: 2000 });
+      } catch (err) {
+        setTodos(prev => prev.filter(t => t.id !== id));
+        toast({ title: 'Deleted locally (offline)', status: 'warning', duration: 2000 });
+      }
+    })();
   };
 
   const handleEdit = (id: number, title: string) => {
@@ -176,15 +150,21 @@ function App() {
   };
 
   const handleSaveEdit = (id: number) => {
-    if (!editTitle.trim()) return;
-    setTodos(todos.map(t => t.id === id ? { ...t, title: editTitle } : t));
-    setEditingId(null);
-    setEditTitle('');
-    toast({
-      title: 'Task updated successfully',
-      status: 'success',
-      duration: 2000,
-    });
+    (async () => {
+      if (!editTitle.trim()) return;
+      try {
+        const updated = await todoApi.updateTodo(id, { title: editTitle });
+        setTodos(prev => prev.map(t => t.id === id ? updated : t));
+        setEditingId(null);
+        setEditTitle('');
+        toast({ title: 'Task updated successfully', status: 'success', duration: 2000 });
+      } catch (err) {
+        setTodos(prev => prev.map(t => t.id === id ? { ...t, title: editTitle } : t));
+        setEditingId(null);
+        setEditTitle('');
+        toast({ title: 'Updated locally (offline)', status: 'warning', duration: 2000 });
+      }
+    })();
   };
 
   const formatDate = (dateString: string) => {
@@ -201,124 +181,23 @@ function App() {
     }
   };
 
-  // If user hasn't entered name yet, show the NameEntry modal only
   if (!userName) {
     return (
       <Box minH="100vh" bg="gray.50" display="flex" alignItems="center" justifyContent="center">
-        <Box bg="white" p={8} borderRadius="lg" shadow="xl" maxW="md" w="full">
-          <Heading as="h2" size="xl" mb={2} textAlign="center" color="green.700">
-            Welcome to Todo App
-          </Heading>
-          <Text mb={6} textAlign="center" color="gray.600">
-            Please enter your name to get started:
-          </Text>
-          <VStack spacing={4}>
-            <Input
-              value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
-              placeholder="Your name..."
-              size="lg"
-              onKeyPress={(e) => e.key === 'Enter' && handleSaveName()}
-              autoFocus
-            />
-            <Button 
-              colorScheme="green" 
-              w="full" 
-              size="lg"
-              onClick={handleSaveName}
-            >
-              Start
-            </Button>
-          </VStack>
-        </Box>
+        <NameEntry onSaveName={handleSaveName} />
       </Box>
     );
   }
 
   return (
     <Box minH="100vh" bg="gray.50">
+      <HeroHeader userName={userName} onChangeUser={handleChangeUser} />
 
-      {/* Hero Header */}
-      <Box
-        bgGradient="linear(to-r, green.900, green.800, green.900)"
-        color="white"
-        py={12}
-        px={4}
-        position="relative"
-        overflow="hidden"
-      >
-        <Box
-          position="absolute"
-          inset={0}
-          opacity={0.2}
-          bgGradient="radial(circle at 30% 50%, whiteAlpha.100, transparent)"
-        />
-        <Container maxW="container.lg" position="relative" zIndex={1}>
-          <Heading as="h1" size="3xl" textAlign="center">
-            Todo App
-          </Heading>
-          {userName && (
-            <VStack mt={4} spacing={1}>
-              <Text fontSize="lg">Hello, {userName}! 👋</Text>
-              <Button
-                size="sm"
-                variant="link"
-                color="whiteAlpha.800"
-                onClick={handleChangeUser}
-                _hover={{ color: 'white' }}
-              >
-                Change user
-              </Button>
-            </VStack>
-          )}
-        </Container>
-      </Box>
-
-      {/* Tab Navigation */}
       <Container maxW="container.lg" px={4} mt={-6}>
-        <HStack spacing={0} bg="white" borderRadius="lg" shadow="md" overflow="hidden">
-          <Button
-            flex={1}
-            py={6}
-            onClick={() => setActiveTab('today')}
-            bg={activeTab === 'today' ? 'green.700' : 'green.100'}
-            color={activeTab === 'today' ? 'white' : 'green.800'}
-            _hover={{ bg: activeTab === 'today' ? 'green.700' : 'green.200' }}
-            borderRadius={0}
-            fontWeight="semibold"
-          >
-            Today
-          </Button>
-          <Button
-            flex={1}
-            py={6}
-            onClick={() => setActiveTab('pending')}
-            bg={activeTab === 'pending' ? 'green.700' : 'green.100'}
-            color={activeTab === 'pending' ? 'white' : 'green.800'}
-            _hover={{ bg: activeTab === 'pending' ? 'green.700' : 'green.200' }}
-            borderRadius={0}
-            fontWeight="semibold"
-          >
-            Pending
-          </Button>
-          <Button
-            flex={1}
-            py={6}
-            onClick={() => setActiveTab('overdue')}
-            bg={activeTab === 'overdue' ? 'green.700' : 'green.100'}
-            color={activeTab === 'overdue' ? 'white' : 'green.800'}
-            _hover={{ bg: activeTab === 'overdue' ? 'green.700' : 'green.200' }}
-            borderRadius={0}
-            fontWeight="semibold"
-          >
-            Overdue
-          </Button>
-        </HStack>
+        <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
       </Container>
 
-      {/* Main Content */}
       <Container maxW="container.lg" px={4} py={8}>
-        {/* Tasks Header */}
         <Flex justify="space-between" align="center" mb={6}>
           <Heading as="h2" size="xl" color="gray.900">
             Tasks
@@ -334,220 +213,25 @@ function App() {
           </Button>
         </Flex>
 
-        {/* Add Task Form */}
         {isAddingTask && (
-          <Box bg="white" p={6} borderRadius="lg" shadow="md" mb={6} borderWidth={2} borderColor="green.500">
-            <Heading as="h3" size="md" mb={4}>
-              New Task
-            </Heading>
-            <VStack spacing={3} align="stretch">
-              <Input
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-                placeholder="Task title..."
-                size="lg"
-                autoFocus
-                onKeyPress={(e) => e.key === 'Enter' && handleAddTask()}
-              />
-              <HStack>
-                <Input
-                  type="date"
-                  value={newTaskDate}
-                  onChange={(e) => setNewTaskDate(e.target.value)}
-                  size="lg"
-                />
-                <Select
-                  value={newTaskPriority}
-                  onChange={(e) => setNewTaskPriority(e.target.value as any)}
-                  size="lg"
-                >
-                  <option value="low">Low Priority</option>
-                  <option value="medium">Medium Priority</option>
-                  <option value="high">High Priority</option>
-                </Select>
-              </HStack>
-              <HStack>
-                <Button colorScheme="green" onClick={handleAddTask}>
-                  Add
-                </Button>
-                <Button
-                  variant="solid"
-                  bg="gray.300"
-                  _hover={{ bg: 'gray.400' }}
-                  onClick={() => {
-                    setIsAddingTask(false);
-                    setNewTaskTitle('');
-                    setNewTaskDate('');
-                  }}
-                >
-                  Cancel
-                </Button>
-              </HStack>
-            </VStack>
-          </Box>
+          <AddTaskForm onAdd={handleAddTask} onCancel={() => setIsAddingTask(false)} />
         )}
 
-        {/* Active Tasks */}
-        <Box bg="white" borderRadius="lg" shadow="md" p={6} mb={6}>
-          {activeTodos.length === 0 ? (
-            <Box textAlign="center" py={12}>
-              <Text fontSize="lg" color="gray.500">
-                No data to display
-              </Text>
-            </Box>
-          ) : (
-            <VStack spacing={3} align="stretch">
-              {activeTodos.map(todo => (
-                <Box
-                  key={todo.id}
-                  p={4}
-                  borderWidth={1}
-                  borderColor="gray.200"
-                  borderRadius="lg"
-                  _hover={{ shadow: 'md' }}
-                  transition="all 0.2s"
-                >
-                  <HStack spacing={4}>
-                    <Checkbox
-                      isChecked={todo.completed}
-                      onChange={() => handleToggle(todo.id)}
-                      size="lg"
-                      colorScheme="green"
-                    />
-                    
-                    {editingId === todo.id ? (
-                      <Input
-                        value={editTitle}
-                        onChange={(e) => setEditTitle(e.target.value)}
-                        onBlur={() => handleSaveEdit(todo.id)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit(todo.id)}
-                        size="md"
-                        autoFocus
-                      />
-                    ) : (
-                      <Text flex={1} color="gray.900">
-                        {todo.title}
-                      </Text>
-                    )}
-                    
-                    {todo.dueDate && (
-                      <HStack color="gray.500" fontSize="sm">
-                        <TimeIcon />
-                        <Text>{formatDate(todo.dueDate)}</Text>
-                      </HStack>
-                    )}
-                    
-                    <IconButton
-                      icon={<EditIcon />}
-                      onClick={() => handleEdit(todo.id, todo.title)}
-                      aria-label="Edit task"
-                      variant="ghost"
-                      colorScheme="gray"
-                      size="sm"
-                    />
-                    
-                    <Box
-                      w={3}
-                      h={8}
-                      borderRadius="md"
-                      bg={getPriorityColor(todo.priority)}
-                    />
-                  </HStack>
-                </Box>
-              ))}
-            </VStack>
-          )}
-        </Box>
-
-        {/* Completed Section */}
-        {completedTodos.length > 0 && (
-          <Box bg="white" borderRadius="lg" shadow="md" overflow="hidden">
-            <Button
-              w="full"
-              justifyContent="space-between"
-              variant="ghost"
-              p={4}
-              onClick={() => setShowCompleted(!showCompleted)}
-              _hover={{ bg: 'gray.50' }}
-              borderRadius={0}
-            >
-              <Heading as="h3" size="lg" color="gray.900">
-                Completed
-              </Heading>
-              {showCompleted ? <ChevronUpIcon boxSize={6} /> : <ChevronDownIcon boxSize={6} />}
-            </Button>
-            
-            <Collapse in={showCompleted} animateOpacity>
-              <Box p={6}>
-                <VStack spacing={3} align="stretch">
-                  {completedTodos.map(todo => (
-                    <Box
-                      key={todo.id}
-                      p={4}
-                      borderWidth={1}
-                      borderColor="gray.200"
-                      borderRadius="lg"
-                      _hover={{ shadow: 'md' }}
-                      transition="all 0.2s"
-                    >
-                      <HStack spacing={4}>
-                        <Checkbox
-                          isChecked={todo.completed}
-                          onChange={() => handleToggle(todo.id)}
-                          size="lg"
-                          colorScheme="green"
-                        />
-                        
-                        <Text
-                          flex={1}
-                          color="gray.400"
-                          textDecoration="line-through"
-                        >
-                          {todo.title}
-                        </Text>
-                        
-                        {todo.dueDate && (
-                          <HStack color="gray.400" fontSize="sm">
-                            <TimeIcon />
-                            <Text>{formatDate(todo.dueDate)}</Text>
-                          </HStack>
-                        )}
-                        
-                        <IconButton
-                          icon={<EditIcon />}
-                          onClick={() => handleEdit(todo.id, todo.title)}
-                          aria-label="Edit task"
-                          variant="ghost"
-                          colorScheme="gray"
-                          size="sm"
-                          color="gray.300"
-                        />
-                        
-                        <IconButton
-                          icon={<DeleteIcon />}
-                          onClick={() => handleDelete(todo.id)}
-                          aria-label="Delete task"
-                          variant="ghost"
-                          colorScheme="red"
-                          size="sm"
-                          color="gray.300"
-                          _hover={{ color: 'red.500' }}
-                        />
-                        
-                        <Box
-                          w={3}
-                          h={8}
-                          borderRadius="md"
-                          bg={getPriorityColor(todo.priority)}
-                        />
-                      </HStack>
-                    </Box>
-                  ))}
-                </VStack>
-              </Box>
-            </Collapse>
-          </Box>
-        )}
+        <TaskListView
+          activeTodos={activeTodos}
+          completedTodos={completedTodos}
+          showCompleted={showCompleted}
+          setShowCompleted={setShowCompleted}
+          editingId={editingId}
+          editTitle={editTitle}
+          setEditTitle={setEditTitle}
+          onToggle={handleToggle}
+          onEdit={handleEdit}
+          onSaveEdit={handleSaveEdit}
+          onDelete={handleDelete}
+          formatDate={formatDate}
+          getPriorityColor={getPriorityColor}
+        />
       </Container>
     </Box>
   );
