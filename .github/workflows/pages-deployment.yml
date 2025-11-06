@@ -1,15 +1,60 @@
-name: Frontend CI/CD pipeline
+name: Frontend CI/CD
 
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  deployments: write
+
+env:
+  CI: true
 
 jobs:
-  deploy:
+  test:
+    name: Unit tests
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      deployments: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: |
+          if npm run | grep -q "^  test$"; then
+            npx vitest --run --coverage --reporter=dot --reporter=github-actions
+          else
+            echo "No 'test' script found. Add one to package.json (e.g. \"test\": \"vitest\")."
+            exit 1
+          fi
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/**
+          if-no-files-found: ignore
+          retention-days: 7
+
+  deploy:
+    name: Build & Deploy (push only)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
     concurrency:
       group: pages-${{ github.ref }}
       cancel-in-progress: true
