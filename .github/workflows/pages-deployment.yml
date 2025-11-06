@@ -10,9 +10,6 @@ permissions:
   contents: read
   deployments: write
 
-env:
-  CI: true
-
 jobs:
   test:
     name: Unit tests
@@ -53,6 +50,7 @@ jobs:
   deploy:
     name: Build & Deploy (push only)
     runs-on: ubuntu-latest
+    needs: test
     if: github.event_name == 'push'
 
     concurrency:
@@ -71,6 +69,8 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install & Build
+        env:
+          VITE_API_BASE_URL: ${{ secrets.PROD_API_BASE_URL }}
         run: |
           npm ci
           npm run build
