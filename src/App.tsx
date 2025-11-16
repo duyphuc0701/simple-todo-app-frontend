@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Box, Container, Heading, Flex, Button, useToast } from '@chakra-ui/react';
 import { AddIcon } from '@chakra-ui/icons';
 import type { Todo } from './types/todo';
@@ -181,59 +182,73 @@ function App() {
     }
   };
 
-  if (!userName) {
-    return (
-      <Box minH="100vh" bg="gray.50" display="flex" alignItems="center" justifyContent="center">
-        <NameEntry onSaveName={handleSaveName} />
-      </Box>
-    );
-  }
-
   return (
-    <Box minH="100vh" bg="gray.50">
-      <HeroHeader userName={userName} onChangeUser={handleChangeUser} />
+    <Routes>
+      {/* LOGIN ROUTE */}
+      <Route
+        path="/login"
+        element={
+          userName ? (
+            <Navigate to="/" replace />
+          ) : (
+            <Box minH="100vh" bg="gray.50" display="flex" alignItems="center" justifyContent="center">
+              <NameEntry onSaveName={handleSaveName} />
+            </Box>
+          )
+        }
+      />
 
-      <Container maxW="container.lg" px={4} mt={-6}>
-        <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
-      </Container>
+      {/* MAIN APP ROUTE */}
+      <Route
+        path="/"
+        element={
+          userName ? (
+            <Box minH="100vh" bg="gray.50">
+              <HeroHeader userName={userName} onChangeUser={handleChangeUser} />
 
-      <Container maxW="container.lg" px={4} py={8}>
-        <Flex justify="space-between" align="center" mb={6}>
-          <Heading as="h2" size="xl" color="gray.900">
-            Tasks
-          </Heading>
-          <Button
-            leftIcon={<AddIcon />}
-            colorScheme="green"
-            size="lg"
-            onClick={() => setIsAddingTask(true)}
-            shadow="md"
-          >
-            Add Task
-          </Button>
-        </Flex>
+              <Container maxW="container.lg" px={4} mt={-6}>
+                <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
+              </Container>
 
-        {isAddingTask && (
-          <AddTaskForm onAdd={handleAddTask} onCancel={() => setIsAddingTask(false)} />
-        )}
+              <Container maxW="container.lg" px={4} py={8}>
+                <Flex justify="space-between" align="center" mb={6}>
+                  <Heading as="h2" size="xl" color="gray.900">Tasks</Heading>
+                  <Button leftIcon={<AddIcon />} colorScheme="green" size="lg"
+                    onClick={() => setIsAddingTask(true)} shadow="md">
+                    Add Task
+                  </Button>
+                </Flex>
 
-        <TaskListView
-          activeTodos={activeTodos}
-          completedTodos={completedTodos}
-          showCompleted={showCompleted}
-          setShowCompleted={setShowCompleted}
-          editingId={editingId}
-          editTitle={editTitle}
-          setEditTitle={setEditTitle}
-          onToggle={handleToggle}
-          onEdit={handleEdit}
-          onSaveEdit={handleSaveEdit}
-          onDelete={handleDelete}
-          formatDate={formatDate}
-          getPriorityColor={getPriorityColor}
-        />
-      </Container>
-    </Box>
+                {isAddingTask && (
+                  <AddTaskForm onAdd={handleAddTask} onCancel={() => setIsAddingTask(false)} />
+                )}
+
+                <TaskListView
+                  activeTodos={activeTodos}
+                  completedTodos={completedTodos}
+                  showCompleted={showCompleted}
+                  setShowCompleted={setShowCompleted}
+                  editingId={editingId}
+                  editTitle={editTitle}
+                  setEditTitle={setEditTitle}
+                  onToggle={handleToggle}
+                  onEdit={handleEdit}
+                  onSaveEdit={handleSaveEdit}
+                  onDelete={handleDelete}
+                  formatDate={formatDate}
+                  getPriorityColor={getPriorityColor}
+                />
+              </Container>
+            </Box>
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+
+      {/* fallback to / */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 

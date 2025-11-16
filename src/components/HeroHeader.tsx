@@ -28,7 +28,7 @@ export const HeroHeader: React.FC<HeroHeaderProps> = ({ userName, onChangeUser }
         </Heading>
         {userName && (
           <VStack mt={4} spacing={1}>
-            <Text fontSize="lg">Hello, {userName}! 👋</Text>
+            <Text fontSize="lg">Hello, {userName}!</Text>
             <Button
               size="sm"
               variant="link"

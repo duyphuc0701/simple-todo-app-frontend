@@ -34,7 +34,7 @@ export const NameEntry = ({ onSaveName }: NameEntryProps) => {
           Welcome to Todo App
         </Heading>
         <Text mb={6} textAlign="center" color="gray.600">
-          Please enter your name to get started:
+          Enter your name to get started:
         </Text>
 
         <VStack spacing={4}>
