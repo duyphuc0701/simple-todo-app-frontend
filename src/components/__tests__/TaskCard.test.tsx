@@ -10,8 +10,9 @@ describe('TaskCard', () => {
   it('renders todo and responds to toggle, edit and delete', async () => {
     const user = userEvent.setup();
     const mockToggle = vi.fn();
-    const mockEdit = vi.fn();
+    const mockStartEdit = vi.fn();
     const mockSaveEdit = vi.fn();
+    const mockCancelEdit = vi.fn();
     const mockDelete = vi.fn();
 
     const todo: Todo = {
@@ -28,11 +29,10 @@ describe('TaskCard', () => {
         <TaskCard
           todo={todo}
           editingId={null}
-          editTitle={''}
-          setEditTitle={() => {}}
           onToggle={mockToggle}
-          onEdit={mockEdit}
-          onSaveEdit={mockSaveEdit}
+          onStartEdit={mockStartEdit}
+          onSaveFull={mockSaveEdit}
+          onCancelEdit={mockCancelEdit}
           onDelete={mockDelete}
           showDelete={true}
           formatDate={(s) => s}
@@ -47,7 +47,7 @@ describe('TaskCard', () => {
 
     const editBtn = screen.getByRole('button', { name: /edit task/i });
     await user.click(editBtn);
-    expect(mockEdit).toHaveBeenCalledWith(123, 'Sample Task');
+    expect(mockStartEdit).toHaveBeenCalledWith(123);
 
     const deleteBtn = screen.getByRole('button', { name: /delete task/i });
     await user.click(deleteBtn);
@@ -56,8 +56,9 @@ describe('TaskCard', () => {
 
   it('shows time when dueDate includes a time component', async () => {
     const mockToggle = vi.fn();
-    const mockEdit = vi.fn();
+    const mockStartEdit = vi.fn();
     const mockSaveEdit = vi.fn();
+    const mockCancelEdit2 = vi.fn();
     const mockDelete = vi.fn();
 
     const todoWithTime: Todo = {
@@ -74,11 +75,10 @@ describe('TaskCard', () => {
         <TaskCard
           todo={todoWithTime}
           editingId={null}
-          editTitle={''}
-          setEditTitle={() => {}}
           onToggle={mockToggle}
-          onEdit={mockEdit}
-          onSaveEdit={mockSaveEdit}
+          onStartEdit={mockStartEdit}
+          onSaveFull={mockSaveEdit}
+          onCancelEdit={mockCancelEdit2}
           onDelete={mockDelete}
           showDelete={true}
           formatDate={(s) => s}

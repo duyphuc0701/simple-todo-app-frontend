@@ -24,7 +24,6 @@ function App() {
 
   // editing
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editTitle, setEditTitle] = useState('');
 
   const toast = useToast();
 
@@ -145,24 +144,25 @@ function App() {
     })();
   };
 
-  const handleEdit = (id: number, title: string) => {
+  const handleEdit = (id: number) => {
     setEditingId(id);
-    setEditTitle(title);
   };
 
-  const handleSaveEdit = (id: number) => {
+  const handleCancelEdit = () => {
+    setEditingId(null);
+  };
+
+  const handleSaveEdit = (id: number, data: { title: string; dueDate?: string; priority?: string; completed?: boolean }) => {
     (async () => {
-      if (!editTitle.trim()) return;
+      if (!data.title.trim()) return;
       try {
-        const updated = await todoApi.updateTodo(id, { title: editTitle });
+        const updated = await todoApi.updateTodo(id, { title: data.title, dueDate: data.dueDate, priority: data.priority as any, completed: data.completed });
         setTodos(prev => prev.map(t => t.id === id ? updated : t));
         setEditingId(null);
-        setEditTitle('');
         toast({ title: 'Task updated successfully', status: 'success', duration: 2000 });
       } catch (err) {
-        setTodos(prev => prev.map(t => t.id === id ? { ...t, title: editTitle } : t));
+        setTodos(prev => prev.map(t => t.id === id ? { ...t, title: data.title, dueDate: data.dueDate, priority: data.priority as any, completed: data.completed ?? t.completed } : t));
         setEditingId(null);
-        setEditTitle('');
         toast({ title: 'Updated locally (offline)', status: 'warning', duration: 2000 });
       }
     })();
@@ -229,11 +229,10 @@ function App() {
                   showCompleted={showCompleted}
                   setShowCompleted={setShowCompleted}
                   editingId={editingId}
-                  editTitle={editTitle}
-                  setEditTitle={setEditTitle}
                   onToggle={handleToggle}
-                  onEdit={handleEdit}
-                  onSaveEdit={handleSaveEdit}
+                  onStartEdit={handleEdit}
+                  onSaveFull={handleSaveEdit}
+                  onCancelEdit={handleCancelEdit}
                   onDelete={handleDelete}
                   formatDate={formatDate}
                   getPriorityColor={getPriorityColor}

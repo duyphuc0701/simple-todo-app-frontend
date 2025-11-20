@@ -10,8 +10,9 @@ describe('TaskListView', () => {
   it('renders active and completed todos and toggles completed collapse', async () => {
     const user = userEvent.setup();
     const mockToggle = vi.fn();
-    const mockEdit = vi.fn();
+    const mockStartEdit = vi.fn();
     const mockSave = vi.fn();
+    const mockCancelEdit = vi.fn();
     const mockDelete = vi.fn();
     const mockSetShow = vi.fn();
 
@@ -30,11 +31,10 @@ describe('TaskListView', () => {
           showCompleted={true}
           setShowCompleted={mockSetShow}
           editingId={null}
-          editTitle={''}
-          setEditTitle={() => {}}
           onToggle={mockToggle}
-          onEdit={mockEdit}
-          onSaveEdit={mockSave}
+          onStartEdit={mockStartEdit}
+          onSaveFull={mockSave}
+          onCancelEdit={mockCancelEdit}
           onDelete={mockDelete}
           formatDate={(s) => s}
           getPriorityColor={() => 'gray.300'}

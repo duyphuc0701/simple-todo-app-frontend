@@ -10,11 +10,10 @@ interface TaskListViewProps {
   showCompleted: boolean;
   setShowCompleted: (v: boolean) => void;
   editingId: number | null;
-  editTitle: string;
-  setEditTitle: (s: string) => void;
   onToggle: (id: number) => void;
-  onEdit: (id: number, title: string) => void;
-  onSaveEdit: (id: number) => void;
+  onStartEdit: (id: number) => void;
+  onSaveFull: (id: number, data: { title: string; dueDate?: string; priority?: string; completed?: boolean }) => void;
+  onCancelEdit: () => void;
   onDelete: (id: number) => void;
   formatDate: (s: string) => string;
   getPriorityColor: (p?: string) => string;
@@ -26,11 +25,10 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
   showCompleted,
   setShowCompleted,
   editingId,
-  editTitle,
-  setEditTitle,
   onToggle,
-  onEdit,
-  onSaveEdit,
+  onStartEdit,
+  onSaveFull,
+  onCancelEdit,
   onDelete,
   formatDate,
   getPriorityColor,
@@ -46,21 +44,20 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
           </Box>
         ) : (
           <VStack spacing={3} align="stretch">
-            {activeTodos.map((todo) => (
-              <TaskCard
-                key={todo.id}
-                todo={todo}
-                editingId={editingId}
-                editTitle={editTitle}
-                setEditTitle={setEditTitle}
-                onToggle={onToggle}
-                onEdit={onEdit}
-                onSaveEdit={onSaveEdit}
-                onDelete={onDelete}
-                formatDate={formatDate}
-                getPriorityColor={getPriorityColor}
-              />
-            ))}
+                {activeTodos.map((todo) => (
+                  <TaskCard
+                    key={todo.id}
+                    todo={todo}
+                    editingId={editingId}
+                    onToggle={onToggle}
+                    onStartEdit={onStartEdit}
+                    onSaveFull={onSaveFull}
+                    onCancelEdit={onCancelEdit}
+                    onDelete={onDelete}
+                    formatDate={formatDate}
+                    getPriorityColor={getPriorityColor}
+                  />
+                ))}
           </VStack>
         )}
       </Box>
@@ -90,11 +87,10 @@ export const TaskListView: React.FC<TaskListViewProps> = ({
                     key={todo.id}
                     todo={todo}
                     editingId={editingId}
-                    editTitle={editTitle}
-                    setEditTitle={setEditTitle}
                     onToggle={onToggle}
-                    onEdit={onEdit}
-                    onSaveEdit={onSaveEdit}
+                    onStartEdit={onStartEdit}
+                    onSaveFull={onSaveFull}
+                    onCancelEdit={onCancelEdit}
                     onDelete={onDelete}
                     showDelete={true}
                     mutedIcons={true}
