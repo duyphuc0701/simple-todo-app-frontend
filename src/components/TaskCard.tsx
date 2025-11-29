@@ -15,7 +15,7 @@ interface TaskCardProps {
   editingId: number | null;
   onToggle: (id: number) => void;
   onStartEdit: (id: number) => void;
-  onSaveFull: (id: number, data: { title: string; dueDate?: string; priority?: string; completed?: boolean; tag?: 'Work'|'Entertainment'|'Health' }) => void;
+  onSaveFull: (id: number, data: { title: string; dueDate?: string; priority?: string; completed?: boolean; tags?: string[] }) => void;
   onCancelEdit: () => void;
   onDelete?: (id: number) => void;
   showDelete?: boolean;
@@ -48,7 +48,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     >
       {editingId === todo.id ? (
         <AddTaskForm
-          initial={{ title: todo.title, dueDate: todo.dueDate, priority: todo.priority, completed: todo.completed, tag: todo.tag }}
+          initial={{ title: todo.title, dueDate: todo.dueDate, priority: todo.priority, completed: todo.completed, tags: todo.tags }}
           onSave={(data) => onSaveFull(todo.id, data)}
           onCancel={onCancelEdit}
           submitLabel="Save"
@@ -79,7 +79,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             {todo.title}
           </Text>
 
-          {todo.tag && (
+          {todo.tags && todo.tags.length > 0 && (
             <Box
               px={3}
               py={1}
@@ -90,7 +90,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               fontSize="sm"
               color="gray.700"
             >
-              {todo.tag}
+              {todo.tags[0]}
             </Box>
           )}
 

@@ -6,7 +6,7 @@ interface AddTaskData {
   dueDate?: string;
   priority?: 'low' | 'medium' | 'high';
   completed?: boolean;
-  tag?: 'Work' | 'Entertainment' | 'Health';
+  tags?: string[];
 }
 
 interface AddTaskFormProps {
@@ -51,7 +51,7 @@ const parseInitialData = (data?: AddTaskData) => {
     time: timeVal,
     priority: data?.priority ?? 'medium',
     completed: !!data?.completed,
-    tag: data?.tag ?? 'Work'
+    tag: (data?.tags && data.tags.length > 0) ? data.tags[0] : 'Work'
   };
 };
 
@@ -75,6 +75,7 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({ onAdd, onSave, onCance
     setTime(newData.time);
     setPriority(newData.priority);
     setCompleted(newData.completed);
+    setTag(newData.tag as any);
   }, [initial]);
 
   const submit = () => {
@@ -90,7 +91,7 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({ onAdd, onSave, onCance
     }
 
     const payload: AddTaskData = { title: title.trim(), dueDate: due, priority, completed };
-    if (tag) payload.tag = tag;
+    if (tag) payload.tags = [tag];
 
     if (onSave) {
       onSave(payload);
@@ -102,6 +103,7 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({ onAdd, onSave, onCance
       setTime('');
       setPriority('medium');
       setCompleted(false);
+      setTag('Work');
     }
   };
 

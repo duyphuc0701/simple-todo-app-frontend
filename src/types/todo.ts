@@ -5,13 +5,13 @@ export interface Todo {
     createdAt: string;
     dueDate?: string;           // ✅ ADD
     priority?: 'low' | 'medium' | 'high';  // ✅ ADD
-    // Optional tag for a task. Single tag per task allowed.
-    tag?: 'Work' | 'Entertainment' | 'Health';
+    // Optional tags for a task. Backend expects array but UI shows first tag only.
+    tags?: string[];
 }
 
 export interface CreateTodoRequest {
     title: string;
     dueDate?: string;
     priority?: 'low' | 'medium' | 'high';
-    tag?: 'Work' | 'Entertainment' | 'Health';
+    tags?: string[];
 }
