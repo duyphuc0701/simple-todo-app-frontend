@@ -6,6 +6,7 @@ interface AddTaskData {
   dueDate?: string;
   priority?: 'low' | 'medium' | 'high';
   completed?: boolean;
+  tag?: 'Work' | 'Entertainment' | 'Health';
 }
 
 interface AddTaskFormProps {
@@ -49,7 +50,8 @@ const parseInitialData = (data?: AddTaskData) => {
     date: dateVal,
     time: timeVal,
     priority: data?.priority ?? 'medium',
-    completed: !!data?.completed
+    completed: !!data?.completed,
+    tag: data?.tag ?? 'Work'
   };
 };
 
@@ -63,6 +65,7 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({ onAdd, onSave, onCance
   const [time, setTime] = useState(defaultValues.time);
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>(defaultValues.priority);
   const [completed, setCompleted] = useState<boolean>(defaultValues.completed);
+  const [tag, setTag] = useState<'Work' | 'Entertainment' | 'Health'>(defaultValues.tag as any);
 
   // 3. Sync state when `initial` prop changes (e.g. switching between tasks)
   useEffect(() => {
@@ -87,6 +90,7 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({ onAdd, onSave, onCance
     }
 
     const payload: AddTaskData = { title: title.trim(), dueDate: due, priority, completed };
+    if (tag) payload.tag = tag;
 
     if (onSave) {
       onSave(payload);
@@ -136,6 +140,11 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({ onAdd, onSave, onCance
             <option value="low">Low Priority</option>
             <option value="medium">Medium Priority</option>
             <option value="high">High Priority</option>
+          </Select>
+          <Select value={tag} onChange={(e) => setTag(e.target.value as any)} size="lg">
+            <option value="Work">Work</option>
+            <option value="Entertainment">Entertainment</option>
+            <option value="Health">Health</option>
           </Select>
         </HStack>
         <HStack>
