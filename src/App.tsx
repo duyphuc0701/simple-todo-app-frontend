@@ -91,14 +91,14 @@ function App() {
     setTodos([]);
   };
 
-  const handleAddTask = (data: { title: string; dueDate?: string; priority?: 'low'|'medium'|'high' }) => {
+  const handleAddTask = (data: { title: string; dueDate?: string; priority?: 'low'|'medium'|'high'; tags?: string[] }) => {
     (async () => {
       if (!data.title.trim()) {
         toast({ title: 'Please enter a task', status: 'warning', duration: 2000 });
         return;
       }
       try {
-        const created = await todoApi.createTodo({ title: data.title, dueDate: data.dueDate, priority: data.priority });
+        const created = await todoApi.createTodo({ title: data.title, dueDate: data.dueDate, priority: data.priority, tags: data.tags });
         setTodos(prev => [...prev, created]);
         setIsAddingTask(false);
         toast({ title: 'Task added successfully', status: 'success', duration: 2000 });
@@ -111,6 +111,7 @@ function App() {
           createdAt: new Date().toISOString(),
           dueDate: data.dueDate,
           priority: data.priority,
+          tags: data.tags,
         };
         setTodos(prev => [...prev, newTodo]);
         setIsAddingTask(false);
@@ -152,18 +153,18 @@ function App() {
     setEditingId(null);
   };
 
-  const handleSaveEdit = (id: number, data: { title: string; dueDate?: string; priority?: string; completed?: boolean }) => {
+  const handleSaveEdit = (id: number, data: { title: string; dueDate?: string; priority?: string; completed?: boolean; tags?: string[] }) => {
     (async () => {
       if (!data.title.trim()) return;
       try {
-        const updated = await todoApi.updateTodo(id, { title: data.title, dueDate: data.dueDate, priority: data.priority as any, completed: data.completed });
+        const updated = await todoApi.updateTodo(id, { title: data.title, dueDate: data.dueDate, priority: data.priority as any, completed: data.completed, tags: data.tags });
         setTodos(prev => prev.map(t => t.id === id ? updated : t));
         setEditingId(null);
         toast({ title: 'Task updated successfully', status: 'success', duration: 2000 });
       } catch (err) {
-        setTodos(prev => prev.map(t => t.id === id ? { ...t, title: data.title, dueDate: data.dueDate, priority: data.priority as any, completed: data.completed ?? t.completed } : t));
+        setTodos(prev => prev.map(t => t.id === id ? { ...t, title: data.title, dueDate: data.dueDate, priority: data.priority as any, completed: data.completed ?? t.completed, tags: data.tags ?? t.tags } : t));
         setEditingId(null);
-        toast({ title: 'Updated locally (offline)', status: 'warning', duration: 2000 });
+        toast({ title: 'Updated locally (offline)', status: 'success' });
       }
     })();
   };

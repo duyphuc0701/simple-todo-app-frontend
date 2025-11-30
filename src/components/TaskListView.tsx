@@ -12,7 +12,7 @@ interface TaskListViewProps {
   editingId: number | null;
   onToggle: (id: number) => void;
   onStartEdit: (id: number) => void;
-  onSaveFull: (id: number, data: { title: string; dueDate?: string; priority?: string; completed?: boolean }) => void;
+  onSaveFull: (id: number, data: { title: string; dueDate?: string; priority?: string; completed?: boolean; tags?: string[] }) => void;
   onCancelEdit: () => void;
   onDelete: (id: number) => void;
   formatDate: (s: string) => string;
