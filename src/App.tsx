@@ -164,7 +164,7 @@ function App() {
       } catch (err) {
         setTodos(prev => prev.map(t => t.id === id ? { ...t, title: data.title, dueDate: data.dueDate, priority: data.priority as any, completed: data.completed ?? t.completed, tags: data.tags ?? t.tags } : t));
         setEditingId(null);
-        toast({ title: 'Updated locally (offline)', status: 2000 });
+        toast({ title: 'Updated locally (offline)', status: 'success' });
       }
     })();
   };
