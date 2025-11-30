@@ -5,9 +5,11 @@ import {
   Checkbox,
   Text,
   IconButton,
+  Icon, // Import Icon wrapper
 } from '@chakra-ui/react';
 import AddTaskForm from './AddTaskForm';
-import { EditIcon, TimeIcon, DeleteIcon } from '@chakra-ui/icons';
+// 1. Import new icons from react-icons/lu (Lucide - very clean/modern)
+import { LuPencil, LuClock1, LuTrash2 } from 'react-icons/lu';
 import type { Todo } from '../types/todo';
 
 interface TaskCardProps {
@@ -96,7 +98,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
           {todo.dueDate && (
             <HStack color="gray.500" fontSize="sm">
-              <TimeIcon />
+              {/* 2. Replaced TimeIcon with LuClock */}
+              <Icon as={LuClock1} />
               <Box>
                 {(() => {
                   try {
@@ -106,10 +109,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                     if (isNaN(dt.getTime())) return null;
                     return (
                       <>
-                        <Text>{formatDate(due)}</Text>
+                        <Text as="span" mr={hasTime ? 1 : 0}>{formatDate(due)}</Text>
                         {hasTime && (
-                          <Text fontSize="xs" color="gray.400">
-                            {dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          <Text as="span" fontSize="xs" color="gray.400">
+                             {dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </Text>
                         )}
                       </>
@@ -123,7 +126,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           )}
 
           <IconButton
-            icon={<EditIcon />}
+            // 3. Replaced EditIcon with LuPencil
+            icon={<Icon as={LuPencil} boxSize={5} />} 
             onClick={() => onStartEdit(todo.id)}
             aria-label="Edit task"
             variant="ghost"
@@ -134,7 +138,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
           {showDelete && onDelete && (
             <IconButton
-              icon={<DeleteIcon />}
+              // 4. Replaced DeleteIcon with LuTrash2
+              icon={<Icon as={LuTrash2} boxSize={5} />}
               onClick={() => onDelete(todo.id)}
               aria-label="Delete task"
               variant="ghost"
